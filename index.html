@@ -1,0 +1,575 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="robots" content="noindex"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sesame people dashboard</title><link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27><rect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%23191919%27/><ellipse cx=%2732%27 cy=%2734%27 rx=%2712%27 ry=%2718%27 transform=%27rotate(18 32 34)%27 fill=%27%23e8e8e6%27/><circle cx=%2728%27 cy=%2729%27 r=%272.4%27 fill=%27%23191919%27/><circle cx=%2737%27 cy=%2732%27 r=%272.4%27 fill=%27%23191919%27/><path d=%27M28.5 38q4 3 8 0%27 stroke=%27%23191919%27 stroke-width=%272.2%27 fill=%27none%27 stroke-linecap=%27round%27/></svg>">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+:root{--bg:#191919;--panel:#1f1f1e;--ink:#e8e8e6;--ink2:#9b9a97;--muted:#6f6e69;--line:#2a2a28;--chip:#2a2a28}
+html[data-theme="light"]{--bg:#ffffff;--panel:#f7f7f5;--ink:#37352f;--ink2:#787774;--muted:#9b9a97;--line:#ededec;--chip:#efefed}
+*{box-sizing:border-box}
+body{background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;color:var(--ink);transition:background .2s,color .2s}
+.top{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--line);padding:14px 28px}
+.toprow{display:flex;justify-content:space-between;align-items:center;gap:16px;max-width:1280px;margin:0 auto}
+h1{font-size:20px;margin:0}
+.sub{color:var(--muted);font-size:14px;margin-top:2px}
+.filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;max-width:1280px;margin:10px auto 0}
+select,button,input[type=search]{background:none;border:1px solid var(--line);border-radius:6px;color:var(--ink2);font:inherit;font-size:14.5px;padding:5px 10px;cursor:pointer}
+select:hover,button:hover{color:var(--ink);border-color:var(--ink2)}
+input[type=search]{cursor:text;min-width:220px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--chip);border:none;border-radius:12px;padding:4px 10px;font-size:14px;color:var(--ink)}
+.chip b{font-weight:600}
+.chip span{cursor:pointer;color:var(--ink2)}
+.chip span:hover{color:var(--ink)}
+.hint{color:var(--muted);font-size:13.5px}
+main{max-width:1280px;margin:0 auto;padding:20px 28px 60px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:6px 0 22px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.kpi .v{font-size:28px;font-weight:700;letter-spacing:-.02em}
+.kpi .l{font-size:13.5px;color:var(--ink2);margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
+.kpi .c{font-size:13px;color:var(--muted);margin-top:4px}
+h2{font-size:15px;color:var(--ink2);margin:30px 0 12px;border-bottom:1px solid var(--line);padding-bottom:7px;text-transform:uppercase;letter-spacing:.05em}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;min-width:0}
+.card.wide{grid-column:1/-1}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{color:var(--ink2);text-align:left;font-weight:600;border-bottom:1px solid var(--line);padding:6px 8px;position:sticky;top:0;background:var(--bg)}
+td{border-bottom:1px solid var(--line);padding:5px 8px;color:var(--ink)}
+td.dim{color:var(--ink2)}
+tr:hover td{background:var(--panel)}
+.tablewrap{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.tabbtns{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
+.tabbtns button.active{color:var(--ink);border-color:var(--ink2);font-weight:600}
+.warn{color:var(--ink);background:var(--chip);border-radius:4px;padding:1px 6px;font-size:13px}
+a{color:var(--ink2)}
+html{scroll-behavior:smooth}
+.filters{max-height:0;opacity:0;overflow:hidden;margin:0 auto;transition:max-height .45s ease,opacity .45s ease,margin .45s ease}
+.filters.show{max-height:90px;opacity:1;margin:10px auto 0}
+.reveal{opacity:0;transform:translateY(30px) scale(.985);filter:blur(5px);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1),filter .8s cubic-bezier(.22,1,.36,1)}
+.reveal.in{opacity:1;transform:none;filter:none}
+#interstitial{height:170vh;position:relative}
+.i-pin{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:0 28px}
+.i-text{font-size:clamp(40px,7vw,72px);font-weight:800;letter-spacing:-.03em;opacity:0;transform:scale(.92)}
+.i-sub{font-size:17px;color:var(--ink2);opacity:0;transform:translateY(10px)}
+#backtop{position:fixed;bottom:26px;right:26px;z-index:100;background:var(--ink);color:var(--bg);border:1px solid var(--ink);border-radius:22px;padding:10px 18px;font-weight:600;font-size:15px;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(10px);transition:opacity .35s,transform .35s;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+#backtop.show{opacity:1;pointer-events:auto;transform:none}
+#resetpill{position:fixed;bottom:26px;left:50%;transform:translate(-50%,90px);z-index:110;background:var(--ink);color:var(--bg);border:1px solid var(--ink);border-radius:24px;padding:12px 22px;font-weight:600;font-size:15.5px;cursor:pointer;box-shadow:0 8px 28px rgba(0,0,0,.3);transition:transform .3s;white-space:nowrap}
+#resetpill.show{transform:translate(-50%,0)}
+#resetpill span{font-weight:400;opacity:.75}
+@media(prefers-reduced-motion:reduce){.reveal{transition:none;opacity:1;transform:none;filter:none}html{scroll-behavior:auto}}
+#summary{max-width:900px;margin:0 auto;padding:48px 28px 60px}
+.s-head{font-size:32px;font-weight:700;line-height:1.25;letter-spacing:-.01em}
+.s-sub{color:var(--ink2);font-size:16px;margin:14px 0 34px;line-height:1.5}
+.s-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px 24px;margin-bottom:18px}
+.s-label{font-size:13.5px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px}
+.s-row{display:flex;gap:18px;align-items:baseline;margin-bottom:16px;flex-wrap:wrap}
+.s-big{font-size:48px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.s-text{font-size:17px;line-height:1.45;flex:1;min-width:240px}
+.s-bar{display:flex;gap:3px;height:42px;margin-bottom:12px}
+.seg{display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--ink2);background:var(--chip);border-radius:5px;min-width:0;overflow:hidden;white-space:nowrap;padding:0 8px}
+.seg.emph{background:var(--ink);color:var(--bg);font-weight:600}
+.seg.mid{background:var(--line);color:var(--ink)}
+.s-so{font-size:15.5px;color:var(--ink2);line-height:1.5;border-top:1px solid var(--line);padding-top:12px}
+.s-so b{color:var(--ink)}
+.s-actions{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px 24px;font-size:16px;line-height:1.8}
+.s-actions .s-label{margin-bottom:6px}
+.s-cta{margin-top:26px;text-align:center}
+.s-cta button{font-size:16px;padding:10px 22px;color:var(--ink);border-color:var(--ink2)}
+</style></head><body>
+<div class="top">
+  <div class="toprow">
+    <div><h1>📈 Sesame people dashboard</h1>
+    <div class="sub" id="subtitle">Snapshot Sep 30, 2025 · scroll for the data · click a bar to filter · click empty space or press Esc to reset · <a href="explore.html">import new csv →</a></div></div>
+    <button id="mode"></button>
+  </div>
+  <div class="filters" id="filterbar">
+    <select id="f_level"><option value="">Level: all</option></select>
+    <select id="f_loc"><option value="">Location: all</option></select>
+    <select id="f_status"><option value="">Status: all</option><option>Active</option><option>Terminated</option></select>
+    <span id="chips"></span>
+    <button id="clear" style="display:none">✕ Clear all filters</button>
+    <span class="hint" id="filtercount"></span>
+  </div>
+</div>
+<section id="summary">
+  <div class="s-head">Two problems are a finishing problem, attrition is different</div>
+  <p class="s-sub">110 people on record. 26 exits + 5 that were never processed. Attrition may need a management fix and the other two need an owner.</p>
+
+  <div class="s-card">
+    <div class="s-label">1 · Attrition is concentrated, not company-wide</div>
+    <div class="s-row"><div class="s-big">53%</div>
+      <div class="s-text">of everyone who quit came from <b>two Customer Success teams</b>, which is 22% of the company. Company-wide, most who quit left before their first anniversary.</div></div>
+    <div class="s-bar">
+      <div class="seg emph" style="flex:9">two CS managers' teams · 9</div>
+      <div class="seg" style="flex:8">everyone else at Sesame · 8</div>
+    </div>
+    <div class="s-so">→ <b>This is one org's problem, not company morale.</b> Read the exit notes and talk to those teams before changing anything.</div>
+  </div>
+
+  <div class="s-card">
+    <div class="s-label">2 · Onboarding never gets finished</div>
+    <div class="s-row"><div class="s-big">15</div>
+      <div class="s-text">hires still have onboarding marked incomplete. The oldest started in <b>March 2023</b>. Speed never changed as we grew; what's missing is anyone closing them out.</div></div>
+    <div class="s-bar">
+      <div class="seg" style="flex:70">done in 60 days · 70</div>
+      <div class="seg mid" style="flex:25">slower · 25</div>
+      <div class="seg emph" style="flex:15">never · 15</div>
+    </div>
+    <div class="s-so">→ <b>Nobody's job is to mark onboarding done, so it never gets done.</b> Until that changes we can't even measure the inconsistent first 60 days, let alone fix it.</div>
+  </div>
+
+  <div class="s-card">
+    <div class="s-label">3 · The quiet risk: leavers keep their access</div>
+    <div class="s-row"><div class="s-big">1<span style="font-size:26px;color:var(--ink2)"> of 24</span></div>
+      <div class="s-text">departed employees has a record confirming their offboarding. For the other 23, <b>there's nothing showing their access was ever turned off.</b></div></div>
+    <div class="s-bar">
+      <div class="seg emph" style="flex:84">system-access requests · 84% blow their deadline</div>
+      <div class="seg" style="flex:41">every other request type · 41%</div>
+    </div>
+    <div class="s-so">→ <b>An auditor would flag this.</b> It's also the cheapest of the three to fix. The ops team isn't actually overloaded, rather it's the one broken request type and a backlog nobody sweeps just make it feel that way.</div>
+  </div>
+
+  <div class="s-actions">
+    <div class="s-label">This week</div>
+    ① Check the 5 unprocessed exits against payroll. Until then the attrition number is give-or-take 5 people.<br>
+    ② Go through all 24 leavers and confirm their access is actually off.<br>
+    ③ Read the exit notes from the two CS teams before deciding anything.
+  </div>
+
+  <div class="s-cta"><button id="cta_explore">Keep scrolling for the data ↓</button></div>
+</section>
+<section id="interstitial"><div class="i-pin">
+  <div class="i-text">data.</div>
+</div></section>
+<main id="explore">
+<button id="backtop">↑ TL;DR</button>
+<button id="resetpill">✕ Reset view <span id="rp_info"></span></button>
+<div class="kpis" id="kpis"></div>
+<p class="hint" style="margin:-8px 0 4px">How to use these charts: click a bar to filter everything · click empty space or press Esc to reset · drag to zoom in · double-click a chart to reset zoom</p>
+<h2>Attrition</h2>
+<div class="grid2">
+  <div class="card"><div id="c_dept"></div></div>
+  <div class="card"><div id="c_mgr"></div></div>
+  <div class="card wide"><div id="c_timeline"></div></div>
+  <div class="card"><div id="c_tenure"></div></div>
+  <div class="card"><div id="c_level"></div></div>
+</div>
+<h2>Onboarding</h2>
+<div class="grid2">
+  <div class="card"><div id="c_cohort"></div></div>
+  <div class="card"><div id="c_onbhist"></div></div>
+</div>
+<h2>Ops</h2>
+<div class="grid2">
+  <div class="card"><div id="c_sla"></div></div>
+  <div class="card"><div id="c_vol"></div></div>
+  <div class="card wide"><div id="c_pend"></div></div>
+</div>
+<h2>Records <span class="hint">· the rows behind whatever you've filtered</span></h2>
+<div class="tabbtns">
+  <button id="tab_emp" class="active">Employees</button>
+  <button id="tab_tix">Tickets</button>
+  <input type="search" id="search" placeholder="Search current rows…">
+  <button id="csv">⬇ Export CSV</button>
+  <span class="hint" id="rowcount"></span>
+</div>
+<div class="tablewrap"><table id="dtable"></table></div>
+</main>
+<script>
+const THEMES = {
+  dark:  {bg:"#191919", ink:"#e8e8e6", ink2:"#9b9a97", muted:"#6f6e69", grid:"#2a2a28",
+          emph:"#e8e8e6", deemph:"#3e3e3b", dim:"#2e2e2c", other:"#8a8a85"},
+  light: {bg:"#ffffff", ink:"#37352f", ink2:"#787774", muted:"#9b9a97", grid:"#ededec",
+          emph:"#37352f", deemph:"#dcdad5", dim:"#eceae6", other:"#93928b"}
+};
+let D=null, theme=localStorage.getItem("sesame-theme")||"dark";
+// cross-filter state
+let S={dept:null,mgr:null,cat:null,cohort:null,level:"",loc:"",status:"",tab:"emp",q:""};
+const $=id=>document.getElementById(id);
+const CFG={displayModeBar:false,responsive:true};
+const SNAP=new Date("2025-09-30");
+const seeded=(i,j)=>{const s=Math.sin(i*374761+j*668265)*10000;return s-Math.floor(s);};
+
+// ---------- filtering ----------
+function empPass(e,ignore){
+  if(S.dept&&ignore!=="dept"&&e.dept!==S.dept)return false;
+  if(S.mgr&&ignore!=="mgr"&&e.mgr!==S.mgr)return false;
+  if(S.cohort&&ignore!=="cohort"&&e.cohort!==S.cohort)return false;
+  if(S.level&&e.level!==S.level)return false;
+  if(S.loc&&e.loc!==S.loc)return false;
+  if(S.status&&e.status!==S.status)return false;
+  return true;
+}
+function fEmps(ignore){return D.employees.filter(e=>empPass(e,ignore));}
+function fTix(ignore){
+  const anyEmpFilter=S.dept||S.mgr||S.cohort||S.level||S.loc||S.status;
+  const byId={}; D.employees.forEach(e=>{if(!(e.id in byId))byId[e.id]=e;});
+  return D.tickets.filter(t=>{
+    if(S.cat&&ignore!=="cat"&&t.cat!==S.cat)return false;
+    if(anyEmpFilter){const e=byId[t.emp];if(!e||!empPass(e,ignore))return false;}
+    return true;
+  });
+}
+function activeChips(){
+  const c=[];
+  if(S.dept)c.push(["Department",S.dept,()=>S.dept=null]);
+  if(S.mgr)c.push(["Manager",S.mgr,()=>S.mgr=null]);
+  if(S.cat)c.push(["Ticket category",S.cat,()=>S.cat=null]);
+  if(S.cohort)c.push(["Start cohort",S.cohort,()=>S.cohort=null]);
+  return c;
+}
+
+// ---------- KPIs ----------
+function median(a){if(!a.length)return null;const s=[...a].sort((x,y)=>x-y);const m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
+function kpis(){
+  const es=fEmps(), ts=fTix();
+  const active=es.filter(e=>e.status==="Active").length;
+  const vol=es.filter(e=>e.type==="Voluntary");
+  const yearAgo=new Date(SNAP);yearAgo.setDate(yearAgo.getDate()-365);
+  const hcAt=m=>es.filter(e=>e.start&&new Date(e.start)<=m&&(!e.term||new Date(e.term)>m)).length;
+  const volT12=vol.filter(e=>e.term&&new Date(e.term)>yearAgo&&new Date(e.term)<=SNAP).length;
+  const avgHC=(hcAt(yearAgo)+hcAt(SNAP))/2;
+  const attr=avgHC?Math.round(1000*volT12/avgHC)/10:null;
+  const onbDone=es.filter(e=>e.onb_days!=null&&e.onb_days<=120);
+  const onbMed=median(onbDone.map(e=>e.onb_days));
+  const onb45=onbDone.length?Math.round(100*onbDone.filter(e=>e.onb_days<=45).length/onbDone.length):null;
+  const onbOpen=es.filter(e=>e.onb_complete==="No").length;
+  const slaMiss=ts.length?Math.round(100*ts.filter(t=>t.sla==="No").length/ts.length):null;
+  const pendOld=ts.filter(t=>t.res==="Pending"&&t.open&&(SNAP-new Date(t.open))/864e5>180).length;
+  const ghosts=es.filter(e=>e.ghost).length;
+  const tiles=[
+    [es.length,"people in view",`${active} active · ${es.length-active} terminated`],
+    [attr!=null?attr+"%":"n/a","T12M voluntary attrition",`${volT12} voluntary exits in trailing 12 mo`],
+    [vol.length,"voluntary exits (all-time)",`median tenure ${median(vol.filter(e=>e.start&&e.term).map(e=>(new Date(e.term)-new Date(e.start))/2629746e0))?.toFixed(1)??"n/a"} months`],
+    [onbMed!=null?onbMed+"d":"n/a","median onboarding",`${onb45??"n/a"}% finish ≤45 days`],
+    [onbOpen,"onboarding never closed","target: 0"],
+    [slaMiss!=null?slaMiss+"%":"n/a","tickets missing SLA",`${ts.length} tickets in view`],
+    [pendOld,"pending >6 months","the dead-letter queue"],
+    [ghosts,"⚠ ghost exit records","Active status + termination date"],
+  ];
+  $("kpis").innerHTML=tiles.map(([v,l,c])=>`<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div><div class="c">${c}</div></div>`).join("");
+}
+
+// ---------- charts ----------
+function layout(T,title,sub,extra){
+  return Object.assign({
+    title:{text:`<b>${title}</b><br><span style="font-size:13px;color:${T.ink2}">${sub}</span>`,
+      font:{size:16,color:T.ink},x:0,xanchor:"left"},
+    paper_bgcolor:T.bg,plot_bgcolor:T.bg,
+    font:{family:'-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',color:T.ink2,size:13.5},
+    margin:{l:60,r:20,t:64,b:44},
+    hoverlabel:{bgcolor:T.bg,bordercolor:T.ink2,font:{color:T.ink}},
+    legend:{font:{color:T.ink2},orientation:"h",y:-0.18},
+    xaxis:{automargin:true,gridcolor:T.grid,zerolinecolor:T.grid,linecolor:T.grid},
+    yaxis:{automargin:true,gridcolor:T.grid,zerolinecolor:T.grid,linecolor:T.grid},
+  },extra||{});
+}
+function barColors(T,keys,sel,hotset){
+  return keys.map(k=>sel?(k===sel?T.emph:T.dim):(hotset&&hotset.has(k)?T.emph:T.deemph));
+}
+function clickToggle(div,getKey,field){
+  div.on("plotly_click",ev=>{
+    const k=getKey(ev.points[0]);
+    S[field]=(S[field]===k)?null:k;
+    renderAll();
+  });
+}
+
+function renderCharts(){
+  const T=THEMES[theme];
+
+  // departments: exits among employees passing all OTHER filters
+  {
+    const es=fEmps("dept");
+    const g={};
+    es.forEach(e=>{g[e.dept]=g[e.dept]||{n:0,vol:0,inv:0};g[e.dept].n++;
+      if(e.status==="Terminated"&&e.type==="Voluntary")g[e.dept].vol++;
+      if(e.status==="Terminated"&&e.type==="Involuntary")g[e.dept].inv++;});
+    const keys=Object.keys(g).sort((a,b)=>(g[a].vol+g[a].inv)/g[a].n-(g[b].vol+g[b].inv)/g[b].n);
+    Plotly.newPlot("c_dept",[
+      {type:"bar",orientation:"h",name:"Voluntary",y:keys,x:keys.map(k=>g[k].vol),
+       marker:{color:barColors(T,keys,S.dept,new Set(["Customer Success"]))},
+       customdata:keys.map(k=>[g[k].n,Math.round(100*(g[k].vol+g[k].inv)/g[k].n)]),
+       hovertemplate:"%{y}: %{x} voluntary · %{customdata[1]}% total attrition (of %{customdata[0]})<extra>click to filter</extra>"},
+      {type:"bar",orientation:"h",name:"Involuntary",y:keys,x:keys.map(k=>g[k].inv),
+       marker:{color:keys.map(k=>S.dept?(k===S.dept?T.deemph:T.dim):T.deemph),
+               line:{color:T.grid,width:1}},
+       hovertemplate:"%{y}: %{x} involuntary<extra>click to filter</extra>"}],
+      layout(T,"Exits by department","Click a bar to filter the whole page · stacked voluntary + involuntary",{height:330,barmode:"stack"}),CFG)
+      .then(div=>clickToggle(div,p=>p.y,"dept"));
+  }
+
+  // managers
+  {
+    const es=fEmps("mgr");
+    const g={};
+    es.forEach(e=>{g[e.mgr]=g[e.mgr]||{n:0,v:0,dept:{}};g[e.mgr].n++;
+      g[e.mgr].dept[e.dept]=(g[e.mgr].dept[e.dept]||0)+1;
+      if(e.status==="Terminated"&&e.type==="Voluntary")g[e.mgr].v++;});
+    const keys=Object.keys(g).sort((a,b)=>g[a].v/g[a].n-g[b].v/g[b].n);
+    const lbl=k=>{const d=Object.entries(g[k].dept).sort((a,b)=>b[1]-a[1])[0][0];return `${k} · ${d}`;};
+    Plotly.newPlot("c_mgr",[{type:"bar",orientation:"h",
+      y:keys.map(lbl),x:keys.map(k=>Math.round(1000*g[k].v/g[k].n)/10),
+      marker:{color:barColors(T,keys,S.mgr,new Set(["MGR06","MGR07"]))},
+      customdata:keys.map(k=>[g[k].v,g[k].n,k]),
+      hovertemplate:"%{y}<br>%{x}% voluntary exit rate (%{customdata[0]} of %{customdata[1]})<extra>click to filter</extra>"}],
+      layout(T,"Voluntary exit rate by manager","MGR07: 3.6× company rate exposure-adjusted. Suggestive, small n",
+        {height:330,xaxis:{automargin:true,ticksuffix:"%",gridcolor:T.grid}}),CFG)
+      .then(div=>clickToggle(div,p=>p.customdata[2],"mgr"));
+  }
+
+  // timeline
+  {
+    const es=fEmps().filter(e=>e.status==="Terminated"&&e.start&&e.term);
+    const mk=(name,f,color,symbol)=>{const s=es.filter(f);return {type:"scatter",mode:"markers",name,
+      x:s.map(e=>e.term),y:s.map(e=>Math.round(10*(new Date(e.term)-new Date(e.start))/2629746e0)/10),
+      marker:{color,size:11,symbol,line:{color:T.bg,width:1.5}},
+      customdata:s.map(e=>[e.id,e.dept,e.mgr,e.level]),
+      hovertemplate:"%{customdata[0]} · %{customdata[1]} · %{customdata[3]} · mgr %{customdata[2]}<br>left %{x} at %{y} mo tenure<extra></extra>"};};
+    Plotly.newPlot("c_timeline",[
+      mk("CS · voluntary",e=>e.dept==="Customer Success"&&e.type==="Voluntary",T.emph,"circle"),
+      mk("CS · involuntary",e=>e.dept==="Customer Success"&&e.type==="Involuntary",T.emph,"triangle-up"),
+      mk("Other · voluntary",e=>e.dept!=="Customer Success"&&e.type==="Voluntary",T.other,"circle"),
+      mk("Other · involuntary",e=>e.dept!=="Customer Success"&&e.type==="Involuntary",T.other,"triangle-up")],
+      layout(T,"Exit timeline: every exit in the current filter","Dashed line = first year · legend toggles series · respects all filters",
+        {height:400,yaxis:{automargin:true,title:{text:"Tenure at exit (months)"},rangemode:"tozero",gridcolor:T.grid},
+         shapes:[{type:"line",xref:"paper",x0:0,x1:1,y0:12,y1:12,line:{color:T.muted,width:1,dash:"dash"}}]}),CFG);
+  }
+
+  // tenure-at-exit histogram
+  {
+    const es=fEmps().filter(e=>e.status==="Terminated"&&e.start&&e.term&&e.type==="Voluntary");
+    const months=es.map(e=>(new Date(e.term)-new Date(e.start))/2629746e0);
+    const bins=["0–6","6–12","12–18","18–24","24+"];
+    const cnt=[0,0,0,0,0];
+    months.forEach(m=>cnt[Math.min(Math.floor(m/6),4)]++);
+    Plotly.newPlot("c_tenure",[{type:"bar",x:bins,y:cnt,
+      marker:{color:[T.emph,T.emph,T.deemph,T.deemph,T.deemph]},
+      hovertemplate:"%{x} months: %{y} voluntary exits<extra></extra>"}],
+      layout(T,"Tenure at voluntary exit","Most walk-outs happen inside the first year",
+        {height:300,yaxis:{automargin:true,dtick:1,gridcolor:T.grid},xaxis:{automargin:true,title:{text:"Months of tenure"},gridcolor:T.grid}}),CFG);
+  }
+
+  // attrition by level
+  {
+    const es=fEmps();
+    const order=["IC1","IC2","IC3","IC4","IC5","M1","M2"];
+    const g={};es.forEach(e=>{g[e.level]=g[e.level]||[0,0];g[e.level][0]++;
+      if(e.status==="Terminated")g[e.level][1]++;});
+    const keys=order.filter(k=>g[k]);
+    Plotly.newPlot("c_level",[{type:"bar",x:keys,
+      y:keys.map(k=>Math.round(100*g[k][1]/g[k][0])),
+      marker:{color:keys.map(k=>k==="IC2"?T.emph:T.deemph)},
+      customdata:keys.map(k=>[g[k][1],g[k][0]]),
+      hovertemplate:"%{x}: %{y}% attrition (%{customdata[0]} of %{customdata[1]})<extra></extra>"}],
+      layout(T,"Attrition by level","IC2s (early-career) carry the highest rate",
+        {height:300,yaxis:{automargin:true,ticksuffix:"%",gridcolor:T.grid}}),CFG);
+  }
+
+  // cohorts
+  {
+    const es=fEmps("cohort").filter(e=>e.onb_days!=null&&e.onb_days<=120&&e.cohort);
+    const cs=[...new Set(es.map(e=>e.cohort))].sort();
+    const usable=cs.filter(c=>es.filter(e=>e.cohort===c).length>=3);
+    const traces=[];
+    usable.forEach((c,i)=>{
+      const pts=es.filter(e=>e.cohort===c);
+      const sel=S.cohort&&S.cohort!==c;
+      traces.push({type:"scatter",mode:"markers",showlegend:false,
+        x:pts.map((p,j)=>i+(seeded(i,j)-.5)*.36),y:pts.map(p=>p.onb_days),
+        marker:{color:sel?T.dim:T.other,size:9,opacity:.85},
+        customdata:pts.map(p=>[p.id,p.dept,c]),
+        hovertemplate:"%{customdata[0]} · %{customdata[1]}<br>%{y} days<extra>click to filter "+c+"</extra>"});
+      const med=median(pts.map(p=>p.onb_days));
+      traces.push({type:"scatter",mode:"lines",showlegend:false,
+        x:[i-.3,i+.3],y:[med,med],line:{color:sel?T.deemph:T.emph,width:3},
+        customdata:[[,,c],[,,c]],
+        hovertemplate:`${c} median: ${med} days<extra>click to filter</extra>`});
+    });
+    Plotly.newPlot("c_cohort",traces,
+      layout(T,"Onboarding by start cohort","Flat medians: it was never fast · dashed = proposed 45-day target · click a cohort to filter",
+        {height:380,xaxis:{automargin:true,tickvals:usable.map((_,i)=>i),
+          ticktext:usable.map(c=>`${c}<br>(n=${es.filter(e=>e.cohort===c).length})`),gridcolor:T.grid},
+         yaxis:{automargin:true,title:{text:"Days to complete"},gridcolor:T.grid},
+         shapes:[{type:"line",xref:"paper",x0:0,x1:1,y0:45,y1:45,line:{color:T.ink2,width:1,dash:"dash"}}]}),CFG)
+      .then(div=>clickToggle(div,p=>p.customdata[2],"cohort"));
+  }
+
+  // onboarding duration histogram
+  {
+    const es=fEmps();
+    const done=es.filter(e=>e.onb_days!=null&&e.onb_days<=120);
+    const bins=[[0,30],[31,45],[46,60],[61,90],[91,120]];
+    const labels=bins.map(b=>`${b[0]}–${b[1]}d`).concat(["never finished"]);
+    const cnt=bins.map(b=>done.filter(e=>e.onb_days>=b[0]&&e.onb_days<=b[1]).length)
+      .concat([es.filter(e=>e.onb_complete==="No").length]);
+    Plotly.newPlot("c_onbhist",[{type:"bar",x:labels,y:cnt,
+      marker:{color:labels.map(l=>l==="never finished"?T.emph:T.deemph)},
+      hovertemplate:"%{x}: %{y} hires<extra></extra>"}],
+      layout(T,"Where hires land, and who never lands","The white bar is the real onboarding problem",
+        {height:380,yaxis:{automargin:true,gridcolor:T.grid}}),CFG);
+  }
+
+  // SLA by category
+  {
+    const ts=fTix("cat");
+    const g={};ts.forEach(t=>{g[t.cat]=g[t.cat]||{n:0,m:0,days:[]};g[t.cat].n++;
+      if(t.sla==="No")g[t.cat].m++;if(t.days!=null)g[t.cat].days.push(t.days);});
+    const keys=Object.keys(g).sort((a,b)=>g[a].m/g[a].n-g[b].m/g[b].n);
+    Plotly.newPlot("c_sla",[{type:"bar",orientation:"h",
+      y:keys,x:keys.map(k=>Math.round(100*g[k].m/g[k].n)),
+      marker:{color:barColors(T,keys,S.cat,new Set(["Systems Access"]))},
+      customdata:keys.map(k=>[g[k].m,g[k].n,median(g[k].days)]),
+      hovertemplate:"%{y}: %{x}% miss (%{customdata[0]} of %{customdata[1]}) · median %{customdata[2]}d open<extra>click to filter</extra>"}],
+      layout(T,"SLA miss rate by category","Implied SLA is ~5 days across the board, so the gap is real · click to filter",
+        {height:330,xaxis:{automargin:true,ticksuffix:"%",range:[0,100],gridcolor:T.grid}}),CFG)
+      .then(div=>clickToggle(div,p=>p.y,"cat"));
+  }
+
+  // volume per capita (within filter)
+  {
+    const ts=fTix(),es=fEmps();
+    const bym={};ts.forEach(t=>{if(!t.open)return;const k=t.open.slice(0,7);bym[k]=(bym[k]||0)+1;});
+    const months=Object.keys(bym).sort();
+    const hcAt=m=>{const dt=new Date(m+"-15");return es.filter(e=>e.start&&new Date(e.start)<=dt&&(!e.term||new Date(e.term)>dt)).length;};
+    const per=months.map(m=>{const h=hcAt(m);return h?Math.round(1000*bym[m]/h)/10:null;});
+    Plotly.newPlot("c_vol",[{type:"scatter",mode:"lines+markers",
+      x:months.map(m=>m+"-01"),y:per,line:{color:T.emph,width:2},marker:{color:T.emph,size:6},
+      customdata:months.map(m=>[bym[m],hcAt(m)]),
+      hovertemplate:"%{x|%b %Y}: %{y} per 100<br>%{customdata[0]} tickets · %{customdata[1]} people in view<extra></extra>"}],
+      layout(T,"Tickets per 100 employees (within current filter)","Flat line = growth didn't cause the firefighting",
+        {height:330,yaxis:{automargin:true,rangemode:"tozero",gridcolor:T.grid}}),CFG);
+  }
+
+  // pending queue
+  {
+    const ts=fTix().filter(t=>t.res==="Pending"&&t.open)
+      .map(t=>({...t,age:Math.round((SNAP-new Date(t.open))/864e5)}))
+      .sort((a,b)=>a.age-b.age);
+    Plotly.newPlot("c_pend",[{type:"bar",
+      x:ts.map(t=>t.id),y:ts.map(t=>t.age),
+      marker:{color:ts.map(t=>t.age>180?T.emph:T.deemph)},
+      customdata:ts.map(t=>[t.cat,t.emp]),
+      hovertemplate:"%{x} · %{customdata[0]} · %{customdata[1]}<br>open %{y} days<extra></extra>"}],
+      layout(T,"Pending queue by age","Dashed = 6 months · every bar is a promise nobody closed",
+        {height:340,xaxis:{automargin:true,tickangle:-45,tickfont:{size:11},gridcolor:T.grid},
+         yaxis:{automargin:true,title:{text:"Days open"},gridcolor:T.grid},
+         shapes:[{type:"line",xref:"paper",x0:0,x1:1,y0:180,y1:180,line:{color:T.ink2,width:1,dash:"dash"}}]}),CFG);
+  }
+}
+
+// ---------- detail table ----------
+function renderTable(){
+  const q=S.q.toLowerCase();
+  let rows,cols;
+  if(S.tab==="emp"){
+    cols=["ID","Name","Dept","Level","Loc","Mgr","Status","Start","Term","Type","Onb days","Flags"];
+    rows=fEmps().map(e=>[e.id,e.name,e.dept,e.level,e.loc,e.mgr,e.status,e.start||"",e.term||"",e.type||"",e.onb_days??"",e.ghost?"⚠ ghost exit":(e.onb_complete==="No"?"onb open":"")]);
+  }else{
+    cols=["Ticket","Employee","Category","Opened","Closed","Days open","SLA met","Resolution"];
+    rows=fTix().map(t=>[t.id,t.emp,t.cat,t.open||"",t.close||"",t.days??"",t.sla,t.res]);
+  }
+  if(q)rows=rows.filter(r=>r.join(" ").toLowerCase().includes(q));
+  $("rowcount").textContent=`${rows.length} rows`;
+  $("dtable").innerHTML="<tr>"+cols.map(c=>`<th>${c}</th>`).join("")+"</tr>"+
+    rows.map(r=>"<tr>"+r.map((v,i)=>`<td class="${i>1?"dim":""}">${String(v).includes("⚠")?`<span class=warn>${v}</span>`:v}</td>`).join("")+"</tr>").join("");
+  $("csv").onclick=()=>{
+    const csv=[cols.join(",")].concat(rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(","))).join("\n");
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+    a.download=`sesame-${S.tab==="emp"?"employees":"tickets"}-filtered.csv`;a.click();
+  };
+}
+
+// ---------- chrome ----------
+function renderChrome(){
+  document.documentElement.dataset.theme=theme;
+  $("mode").textContent=theme==="dark"?"☀️ Light mode":"🌙 Dark mode";
+  const chips=activeChips();
+  $("chips").innerHTML=chips.map(([l,v],i)=>`<span class="chip"><b>${l}:</b> ${v} <span data-i="${i}">✕</span></span>`).join(" ");
+  document.querySelectorAll("#chips .chip span[data-i]").forEach(el=>{
+    el.onclick=()=>{activeChips()[+el.dataset.i][2]();renderAll();};
+  });
+  $("clear").style.display=(chips.length||S.level||S.loc||S.status)?"":"none";
+  const nE=fEmps().length,nT=fTix().length;
+  $("filtercount").textContent=(chips.length||S.level||S.loc||S.status)?`→ ${nE} of ${D.employees.length} people · ${nT} of ${D.tickets.length} tickets`:"";
+  const act=chips.length||S.level||S.loc||S.status;
+  $("resetpill").classList.toggle("show",!!act);
+  $("rp_info").textContent=act?`· showing ${nE} of ${D.employees.length} people`:"";
+}
+function renderAll(){renderChrome();kpis();renderCharts();renderTable();}
+
+// ---------- scroll choreography ----------
+function initScroll(){
+  // staggered reveal for cards / sections
+  const targets=document.querySelectorAll("#summary .s-card, #summary .s-actions, #summary .s-cta, #explore .kpis, #explore .card, #explore h2, #explore .tabbtns, #explore .tablewrap");
+  targets.forEach(el=>el.classList.add("reveal"));
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach((en,i)=>{ if(en.isIntersecting){
+      en.target.style.transitionDelay=`${(i%3)*90}ms`;
+      en.target.classList.add("in"); io.unobserve(en.target); }});
+  },{rootMargin:"0px 0px -12% 0px",threshold:0.08});
+  targets.forEach(el=>io.observe(el));
+
+  // interstitial: fade/scale driven by scroll progress
+  const inter=$("interstitial"),it=document.querySelector(".i-text");
+  let ticking=false;
+  const drive=()=>{
+    ticking=false;
+    const r=inter.getBoundingClientRect();
+    const total=r.height-innerHeight;
+    const p=Math.min(1,Math.max(0,-r.top/total));
+    const tri=p<.45?p/.45:p>.75?Math.max(0,(1-p)/.25):1;
+    it.style.opacity=tri;
+    it.style.transform=`scale(${.92+.08*tri})`;
+  };
+  addEventListener("scroll",()=>{if(!ticking){ticking=true;requestAnimationFrame(drive);}},{passive:true});
+  drive();
+
+  // back-to-top pill + filter bar appear once you're in the data
+  const gate=new IntersectionObserver(en=>{
+    const inData=!en[0].isIntersecting;
+    $("backtop").classList.toggle("show",inData);
+    $("filterbar").classList.toggle("show",inData);
+  },{rootMargin:"-80px 0px 0px 0px"});
+  gate.observe($("summary"));
+}
+$("cta_explore").onclick=()=>$("explore").scrollIntoView({behavior:"smooth"});
+$("backtop").onclick=()=>window.scrollTo({top:0,behavior:"smooth"});
+
+$("mode").onclick=()=>{theme=theme==="dark"?"light":"dark";localStorage.setItem("sesame-theme",theme);
+  document.documentElement.dataset.theme=theme;
+  $("mode").textContent=theme==="dark"?"☀️ Light mode":"🌙 Dark mode";
+  renderAll();};
+function resetView(){S={...S,dept:null,mgr:null,cat:null,cohort:null,level:"",loc:"",status:""};
+  $("f_level").value="";$("f_loc").value="";$("f_status").value="";renderAll();}
+$("clear").onclick=resetView;
+$("resetpill").onclick=resetView;
+document.addEventListener("keydown",e=>{if(e.key==="Escape")resetView();});
+// click empty chart space -> clear chart filters (Tableau-style deselect)
+let _md={x:0,y:0};
+document.addEventListener("mousedown",e=>{_md={x:e.clientX,y:e.clientY};},true);
+document.addEventListener("click",e=>{
+  const card=e.target.closest&&e.target.closest("#explore .card");
+  if(!card)return;
+  if(Math.hypot(e.clientX-_md.x,e.clientY-_md.y)>6)return;           // was a drag/zoom
+  if(e.target.closest(".legend")||e.target.closest(".point"))return; // legend or a data mark
+  if(S.dept||S.mgr||S.cat||S.cohort){setTimeout(()=>{S.dept=S.mgr=S.cat=S.cohort=null;renderAll();},0);}
+});
+$("f_level").onchange=e=>{S.level=e.target.value;renderAll();};
+$("f_loc").onchange=e=>{S.loc=e.target.value;renderAll();};
+$("f_status").onchange=e=>{S.status=e.target.value;renderAll();};
+$("tab_emp").onclick=()=>{S.tab="emp";$("tab_emp").classList.add("active");$("tab_tix").classList.remove("active");renderTable();};
+$("tab_tix").onclick=()=>{S.tab="tix";$("tab_tix").classList.add("active");$("tab_emp").classList.remove("active");renderTable();};
+$("search").oninput=e=>{S.q=e.target.value;renderTable();};
+
+fetch("data.json").then(r=>r.json()).then(j=>{
+  D=j;
+  const lv=[...new Set(j.employees.map(e=>e.level))].sort();
+  lv.forEach(v=>{const o=document.createElement("option");o.textContent=v;$("f_level").appendChild(o);});
+  [...new Set(j.employees.map(e=>e.loc))].sort().forEach(v=>{const o=document.createElement("option");o.textContent=v;$("f_loc").appendChild(o);});
+  document.documentElement.dataset.theme=theme;
+  $("mode").textContent=theme==="dark"?"☀️ Light mode":"🌙 Dark mode";
+  renderAll();
+  initScroll();
+});
+</script>
+</body></html>

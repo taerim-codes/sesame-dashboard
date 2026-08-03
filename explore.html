@@ -1,0 +1,258 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="robots" content="noindex"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sesame data explorer</title><link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27><rect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%23191919%27/><ellipse cx=%2732%27 cy=%2734%27 rx=%2712%27 ry=%2718%27 transform=%27rotate(18 32 34)%27 fill=%27%23e8e8e6%27/><circle cx=%2728%27 cy=%2729%27 r=%272.4%27 fill=%27%23191919%27/><circle cx=%2737%27 cy=%2732%27 r=%272.4%27 fill=%27%23191919%27/><path d=%27M28.5 38q4 3 8 0%27 stroke=%27%23191919%27 stroke-width=%272.2%27 fill=%27none%27 stroke-linecap=%27round%27/></svg>">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root{--bg:#191919;--panel:#1f1f1e;--ink:#e8e8e6;--ink2:#9b9a97;--muted:#6f6e69;--line:#2a2a28;--chip:#2a2a28}
+html[data-theme="light"]{--bg:#ffffff;--panel:#f7f7f5;--ink:#37352f;--ink2:#787774;--muted:#9b9a97;--line:#ededec;--chip:#efefed}
+*{box-sizing:border-box}
+body{background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;color:var(--ink);transition:background .2s,color .2s}
+.top{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--line);padding:14px 28px}
+.toprow{display:flex;justify-content:space-between;align-items:center;gap:16px;max-width:1280px;margin:0 auto}
+h1{font-size:20px;margin:0}
+.sub{color:var(--muted);font-size:14px;margin-top:2px}
+main{max-width:1280px;margin:0 auto;padding:20px 28px 60px}
+button,select,input[type=search]{background:none;border:1px solid var(--line);border-radius:6px;color:var(--ink2);font:inherit;font-size:14.5px;padding:5px 10px;cursor:pointer}
+button:hover,select:hover{color:var(--ink);border-color:var(--ink2)}
+input[type=search]{cursor:text;min-width:200px}
+a{color:var(--ink2)}
+#drop{border:2px dashed var(--line);border-radius:12px;padding:60px 24px;text-align:center;margin:30px 0;cursor:pointer;transition:border-color .2s}
+#drop.over{border-color:var(--ink2)}
+#drop .big{font-size:22px;font-weight:700;margin-bottom:8px}
+#drop .small{color:var(--ink2);font-size:15.5px;line-height:1.6}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--chip);border-radius:12px;padding:4px 10px;font-size:14px;color:var(--ink);margin:2px}
+.chip span{cursor:pointer;color:var(--ink2)}
+.chip span:hover{color:var(--ink)}
+h2{font-size:15px;color:var(--ink2);margin:28px 0 12px;border-bottom:1px solid var(--line);padding-bottom:7px;text-transform:uppercase;letter-spacing:.05em}
+.builder{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:14px}
+.builder label{color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px;min-width:0}
+.card.wide{grid-column:1/-1}
+.meta{font-size:13px;color:var(--muted);padding:2px 8px 6px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{color:var(--ink2);text-align:left;font-weight:600;border-bottom:1px solid var(--line);padding:6px 8px;position:sticky;top:0;background:var(--bg);white-space:nowrap}
+td{border-bottom:1px solid var(--line);padding:5px 8px;color:var(--ink);white-space:nowrap;max-width:280px;overflow:hidden;text-overflow:ellipsis}
+tr:hover td{background:var(--panel)}
+.tablewrap{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.hint{color:var(--muted);font-size:13.5px}
+#resetpill{position:fixed;bottom:26px;left:50%;transform:translate(-50%,90px);z-index:110;background:var(--ink);color:var(--bg);border:1px solid var(--ink);border-radius:24px;padding:12px 22px;font-weight:600;font-size:15.5px;cursor:pointer;box-shadow:0 8px 28px rgba(0,0,0,.3);transition:transform .3s;white-space:nowrap}
+#resetpill.show{transform:translate(-50%,0)}
+#resetpill span{font-weight:400;opacity:.75}
+</style></head><body>
+<div class="top"><div class="toprow">
+  <div><h1>🧮 Data explorer</h1>
+  <div class="sub">Drop any CSV. Everything runs in your browser. The file is never uploaded anywhere. · <a href="index.html">back to dashboard</a></div></div>
+  <button id="mode"></button>
+</div></div>
+<main>
+<div id="drop">
+  <div class="big">Drop a CSV here, or click to choose a file</div>
+  <div class="small">Column types are detected automatically → every column gets profiled → build any chart with the picker.<br>
+  Click a bar in any chart to filter everything else. Click empty space or press Esc to reset. Nothing leaves this page.</div>
+  <div style="margin-top:18px"><button id="sample">or try it with sample data (Sesame employees)</button></div>
+  <input type="file" id="file" accept=".csv,text/csv" style="display:none">
+</div>
+<div id="app" style="display:none">
+  <div class="bar">
+    <b id="fname"></b><span class="hint" id="shape"></span>
+    <span id="chips"></span>
+    <button id="clear" style="display:none">✕ Clear filters</button>
+    <button id="reset">Load a different file</button>
+  </div>
+  <h2>Build a chart</h2>
+  <div class="builder">
+    <label>Group by</label><select id="b_x"></select>
+    <label>Show</label><select id="b_agg"><option value="count">count of rows</option><option value="sum">sum of…</option><option value="avg">average of…</option></select>
+    <select id="b_y" style="display:none"></select>
+    <label>Split by</label><select id="b_split"><option value="">nothing</option></select>
+  </div>
+  <div class="card wide"><div id="built"></div></div>
+  <h2>Every column, profiled</h2>
+  <div class="grid" id="profiles"></div>
+  <h2>Rows <span class="hint" id="rowcount"></span></h2>
+  <div class="bar"><input type="search" id="search" placeholder="Search rows…"><button id="csv">⬇ Export filtered CSV</button></div>
+  <div class="tablewrap"><table id="dtable"></table></div>
+</div>
+<button id="resetpill">✕ Reset filters <span id="rp_info"></span></button>
+</main>
+<script>
+const T = () => document.documentElement.dataset.theme === "light"
+  ? {bg:"#ffffff",ink:"#37352f",ink2:"#787774",muted:"#9b9a97",grid:"#ededec",emph:"#37352f",deemph:"#dcdad5",dim:"#eceae6"}
+  : {bg:"#191919",ink:"#e8e8e6",ink2:"#9b9a97",muted:"#6f6e69",grid:"#2a2a28",emph:"#e8e8e6",deemph:"#3e3e3b",dim:"#2e2e2c"};
+const $=id=>document.getElementById(id);
+const CFG={displayModeBar:false,responsive:true};
+let rows=[],cols=[],types={},filters={},q="";
+
+// ---------- type inference ----------
+function inferTypes(){
+  types={};
+  cols.forEach(c=>{
+    const vals=rows.map(r=>r[c]).filter(v=>v!==null&&v!==undefined&&String(v).trim()!=="");
+    if(!vals.length){types[c]="text";return;}
+    const nNum=vals.filter(v=>v!==""&&!isNaN(Number(String(v).replace(/,/g,"")))).length;
+    const nDate=vals.filter(v=>{const s=String(v);return isNaN(Number(s))&&!isNaN(Date.parse(s));}).length;
+    const distinct=new Set(vals.map(String)).size;
+    if(nNum/vals.length>0.9)types[c]="number";
+    else if(nDate/vals.length>0.9)types[c]="date";
+    else if(distinct<=30||distinct/vals.length<0.5)types[c]="category";
+    else types[c]="text";
+  });
+}
+const num=v=>Number(String(v).replace(/,/g,""));
+
+// ---------- filtering ----------
+function fRows(exceptCol){
+  return rows.filter(r=>{
+    for(const [c,v] of Object.entries(filters)){
+      if(c===exceptCol)continue;
+      if(types[c]==="date"){ if(monthOf(r[c])!==v)return false; }
+      else if(String(r[c]??"")!==v)return false;
+    }
+    if(q&&!cols.some(c=>String(r[c]??"").toLowerCase().includes(q)))return false;
+    return true;
+  });
+}
+const monthOf=v=>{const d=new Date(v);return isNaN(d)?"":`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;};
+function toggleFilter(c,v){ if(filters[c]===v)delete filters[c]; else filters[c]=v; renderAll(); }
+
+// ---------- charts ----------
+function layout(t,title,h){
+  return {title:{text:`<b>${title}</b>`,font:{size:14.5,color:t.ink},x:0,xanchor:"left"},
+    paper_bgcolor:t.bg,plot_bgcolor:t.bg,
+    font:{family:'-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',color:t.ink2,size:12.5},
+    margin:{l:44,r:12,t:34,b:56},height:h||230,showlegend:false,
+    hoverlabel:{bgcolor:t.bg,bordercolor:t.ink2,font:{color:t.ink}},
+    xaxis:{gridcolor:t.grid,linecolor:t.grid,automargin:true},
+    yaxis:{gridcolor:t.grid,linecolor:t.grid,automargin:true}};
+}
+function catCounts(data,c,cap){
+  const m={};data.forEach(r=>{const k=String(r[c]??"")||"(empty)";m[k]=(m[k]||0)+1;});
+  let e=Object.entries(m).sort((a,b)=>b[1]-a[1]);
+  if(cap&&e.length>cap){const rest=e.slice(cap).reduce((s,x)=>s+x[1],0);e=e.slice(0,cap);e.push(["(other)",rest]);}
+  return e;
+}
+function profileChart(div,c){
+  const t=T(),data=fRows(c),sel=filters[c];
+  if(types[c]==="category"||types[c]==="text"){
+    const e=catCounts(data,c,8);
+    Plotly.newPlot(div,[{type:"bar",x:e.map(x=>x[0]),y:e.map(x=>x[1]),
+      marker:{color:e.map(x=>sel?(x[0]===sel?t.emph:t.dim):t.deemph)},
+      hovertemplate:"%{x}: %{y} rows<extra>click to filter</extra>"}],
+      layout(t,c),CFG).then(d=>d.on("plotly_click",ev=>toggleFilter(c,ev.points[0].x)));
+  }else if(types[c]==="number"){
+    const vals=data.map(r=>num(r[c])).filter(v=>!isNaN(v));
+    Plotly.newPlot(div,[{type:"histogram",x:vals,nbinsx:10,marker:{color:t.deemph},
+      hovertemplate:"%{x}: %{y} rows<extra></extra>"}],layout(t,c),CFG);
+  }else{ // date
+    const m={};data.forEach(r=>{const k=monthOf(r[c]);if(k)m[k]=(m[k]||0)+1;});
+    const ks=Object.keys(m).sort();
+    Plotly.newPlot(div,[{type:"bar",x:ks,y:ks.map(k=>m[k]),
+      marker:{color:ks.map(k=>sel?(k===sel?t.emph:t.dim):t.deemph)},
+      hovertemplate:"%{x}: %{y} rows<extra>click to filter</extra>"}],
+      layout(t,c+" (by month)"),CFG).then(d=>d.on("plotly_click",ev=>toggleFilter(c,ev.points[0].x)));
+  }
+}
+function builtChart(){
+  const t=T(),data=fRows();
+  const x=$("b_x").value,agg=$("b_agg").value,y=$("b_y").value,split=$("b_split").value;
+  if(!x)return;
+  const key=r=>types[x]==="date"?monthOf(r[x]):(String(r[x]??"")||"(empty)");
+  const val=r=>agg==="count"?1:num(r[y]);
+  const groups={};
+  data.forEach(r=>{const k=key(r);if(!k)return;const s=split?(String(r[split]??"")||"(empty)"):"_";
+    groups[s]=groups[s]||{};groups[s][k]=groups[s][k]||[];const v=val(r);if(!isNaN(v))groups[s][k].push(v);});
+  const allKeys=[...new Set(Object.values(groups).flatMap(g=>Object.keys(g)))];
+  types[x]==="date"?allKeys.sort():allKeys.sort((a,b)=>{
+    const tot=k=>Object.values(groups).reduce((s,g)=>s+(g[k]?g[k].length:0),0);return tot(b)-tot(a);});
+  const series=Object.keys(groups).slice(0,6);
+  const shades=[t.emph,t.deemph,"#8a8a85","#55554f","#b0afa8","#6f6e69"];
+  const traces=series.map((s,i)=>({type:types[x]==="date"?"scatter":"bar",
+    mode:types[x]==="date"?"lines+markers":undefined,name:s==="_"?"":s,
+    x:allKeys,y:allKeys.map(k=>{const a=(groups[s]||{})[k]||[];if(!a.length)return null;
+      return agg==="avg"?a.reduce((p,c)=>p+c,0)/a.length:a.reduce((p,c)=>p+c,0);}),
+    marker:{color:shades[i%shades.length]},line:{color:shades[i%shades.length]}}));
+  const title=`${agg==="count"?"Count of rows":agg+" of "+y} by ${x}${split?" · split by "+split:""}`;
+  const lay=layout(t,title,360);lay.showlegend=!!split;lay.legend={font:{color:t.ink2},orientation:"h"};
+  if(!split)Plotly.newPlot("built",traces,lay,CFG).then(d=>d.on("plotly_click",ev=>toggleFilter(x,ev.points[0].x)));
+  else Plotly.newPlot("built",traces,Object.assign(lay,{barmode:"group"}),CFG);
+}
+
+// ---------- table ----------
+function renderTable(){
+  const data=fRows();
+  $("rowcount").textContent=`· ${data.length} of ${rows.length}`;
+  const show=data.slice(0,500);
+  $("dtable").innerHTML="<tr>"+cols.map(c=>`<th>${c}</th>`).join("")+"</tr>"+
+    show.map(r=>"<tr>"+cols.map(c=>`<td>${String(r[c]??"")}</td>`).join("")+"</tr>").join("");
+  $("csv").onclick=()=>{
+    const csv=[cols.join(",")].concat(data.map(r=>cols.map(c=>`"${String(r[c]??"").replace(/"/g,'""')}"`).join(","))).join("\n");
+    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+    a.download="filtered.csv";a.click();};
+}
+function renderChips(){
+  const e=Object.entries(filters);
+  $("resetpill").classList.toggle("show",!!e.length);
+  $("rp_info").textContent=e.length?`· showing ${fRows().length} of ${rows.length} rows`:"";
+  $("chips").innerHTML=e.map(([c,v])=>`<span class="chip"><b>${c}:</b> ${v} <span data-c="${c}">✕</span></span>`).join("");
+  document.querySelectorAll("#chips span[data-c]").forEach(el=>el.onclick=()=>{delete filters[el.dataset.c];renderAll();});
+  $("clear").style.display=e.length?"":"none";
+}
+function renderAll(){
+  renderChips();builtChart();
+  $("profiles").querySelectorAll(".pchart").forEach(d=>profileChart(d,d.dataset.col));
+  renderTable();
+}
+
+// ---------- load ----------
+function load(name,parsed){
+  rows=parsed.filter(r=>Object.values(r).some(v=>String(v??"").trim()!==""));
+  cols=Object.keys(rows[0]||{});filters={};q="";
+  inferTypes();
+  $("fname").textContent=name;
+  $("shape").textContent=`· ${rows.length} rows · ${cols.length} columns`;
+  $("drop").style.display="none";$("app").style.display="";
+  const groupables=cols.filter(c=>types[c]!=="number");
+  const numerics=cols.filter(c=>types[c]==="number");
+  $("b_x").innerHTML=groupables.map(c=>`<option>${c}</option>`).join("");
+  $("b_y").innerHTML=numerics.map(c=>`<option>${c}</option>`).join("");
+  $("b_split").innerHTML='<option value="">nothing</option>'+cols.filter(c=>types[c]==="category").map(c=>`<option>${c}</option>`).join("");
+  $("profiles").innerHTML=cols.slice(0,16).map(c=>
+    `<div class="card"><div class="pchart" data-col="${c}"></div><div class="meta">${types[c]} · ${new Set(rows.map(r=>String(r[c]??""))).size} distinct · ${rows.filter(r=>String(r[c]??"").trim()==="").length} empty</div></div>`).join("");
+  renderAll();
+}
+function parseFile(f){Papa.parse(f,{header:true,skipEmptyLines:true,complete:res=>load(f.name,res.data)});}
+
+$("drop").onclick=e=>{if(e.target.id!=="sample")$("file").click();};
+$("file").onchange=e=>{if(e.target.files[0])parseFile(e.target.files[0]);};
+["dragover","dragenter"].forEach(ev=>$("drop").addEventListener(ev,e=>{e.preventDefault();$("drop").classList.add("over");}));
+["dragleave","drop"].forEach(ev=>$("drop").addEventListener(ev,e=>{e.preventDefault();$("drop").classList.remove("over");}));
+$("drop").addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(f)parseFile(f);});
+$("sample").onclick=e=>{e.stopPropagation();
+  fetch("data.json").then(r=>r.json()).then(j=>load("sesame-employees (sample)",j.employees));};
+$("reset").onclick=()=>{$("app").style.display="none";$("drop").style.display="";rows=[];};
+$("clear").onclick=()=>{filters={};renderAll();};
+$("resetpill").onclick=()=>{filters={};renderAll();};
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&rows.length){filters={};renderAll();}});
+let _md={x:0,y:0};
+document.addEventListener("mousedown",e=>{_md={x:e.clientX,y:e.clientY};},true);
+document.addEventListener("click",e=>{
+  const card=e.target.closest&&e.target.closest("#app .card");
+  if(!card)return;
+  if(Math.hypot(e.clientX-_md.x,e.clientY-_md.y)>6)return;
+  if(e.target.closest(".legend")||e.target.closest(".point"))return;
+  if(Object.keys(filters).length){setTimeout(()=>{filters={};renderAll();},0);}
+});
+$("search").oninput=e=>{q=e.target.value.toLowerCase();renderAll();};
+$("b_x").onchange=builtChart;$("b_split").onchange=builtChart;
+$("b_agg").onchange=()=>{$("b_y").style.display=$("b_agg").value==="count"?"none":"";builtChart();};
+$("b_y").onchange=builtChart;
+
+const btn=$("mode");
+function applyTheme(th){document.documentElement.dataset.theme=th;
+  btn.textContent=th==="dark"?"☀️ Light mode":"🌙 Dark mode";localStorage.setItem("sesame-theme",th);}
+btn.onclick=()=>{applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");if(rows.length)renderAll();};
+applyTheme(localStorage.getItem("sesame-theme")||"dark");
+</script>
+</body></html>
